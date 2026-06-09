@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Noma iQ — Sign In",
+        "description": "Enter your Canadian Tire / Noma iQ credentials and the Ayla app credentials extracted from the APK. See README for instructions.",
+        "data": {
+          "email": "Email (Canadian Tire / Noma iQ account)",
+          "password": "Password",
+          "app_id": "Ayla App ID",
+          "app_secret": "Ayla App Secret"
+        }
+      },
+      "select_device": {
+        "title": "Select AC unit",
+        "data": {
+          "dsn": "Device"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid email, password, or Ayla app credentials",
+      "cannot_connect": "Cannot reach Ayla server",
+      "no_device": "No Noma iQ AC found in this account"
+    },
+    "abort": {
+      "already_configured": "Device already configured"
+    }
+  }
+}

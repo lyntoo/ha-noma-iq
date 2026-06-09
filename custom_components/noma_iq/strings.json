@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Noma iQ — Connexion",
+        "description": "Entrez vos identifiants Canadian Tire / Noma iQ ainsi que les credentials Ayla extraits de l'APK. Voir le README pour les instructions.",
+        "data": {
+          "email": "Courriel (compte Canadian Tire / Noma iQ)",
+          "password": "Mot de passe",
+          "app_id": "Ayla App ID",
+          "app_secret": "Ayla App Secret"
+        }
+      },
+      "select_device": {
+        "title": "Choisir le climatiseur",
+        "data": {
+          "dsn": "Appareil"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Courriel, mot de passe ou credentials Ayla invalides",
+      "cannot_connect": "Impossible de joindre le serveur Ayla",
+      "no_device": "Aucun climatiseur Noma iQ trouvé dans ce compte"
+    },
+    "abort": {
+      "already_configured": "Appareil déjà configuré"
+    }
+  }
+}
