@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from homeassistant.components.climate import (
@@ -25,7 +26,9 @@ from .const import (
     MODE_FAN,
     PROP_AMBIENT_TEMP,
     PROP_FAN_SPEED,
+    PROP_FAN_SPEED_STATUS,
     PROP_MODE,
+    PROP_MODE_STATUS,
     PROP_NIGHT_MODE,
     PROP_POWER,
     PROP_SWING,
@@ -99,10 +102,16 @@ class NomaIQClimate(CoordinatorEntity[NomaIQCoordinator], ClimateEntity):
 
     @property
     def hvac_mode(self) -> HVACMode:
+        # PROP_MODE_STATUS is device-reported actual state.
+        # PROP_POWER/PROP_MODE are last commanded values — stale if command failed.
+        mode_status = self._props.get(PROP_MODE_STATUS)
+        if mode_status in NOMA_TO_HA_MODE:
+            # Device reports an active mode → it is running regardless of commanded power.
+            return NOMA_TO_HA_MODE[mode_status]
+        # mode_status absent or unknown → fall back to commanded power state.
         if str(self._props.get(PROP_POWER, "0")) == "0":
             return HVACMode.OFF
-        mode = self._props.get(PROP_MODE, MODE_COOL)
-        return NOMA_TO_HA_MODE.get(mode, HVACMode.COOL)
+        return NOMA_TO_HA_MODE.get(self._props.get(PROP_MODE, MODE_COOL), HVACMode.COOL)
 
     @property
     def current_temperature(self) -> float | None:
@@ -116,12 +125,30 @@ class NomaIQClimate(CoordinatorEntity[NomaIQCoordinator], ClimateEntity):
 
     @property
     def fan_mode(self) -> str:
-        noma_fan = self._props.get(PROP_FAN_SPEED, FAN_AUTO)
+        # Prefer fan_speed_status (device-reported) over last commanded fan_speed.
+        noma_fan = (
+            self._props.get(PROP_FAN_SPEED_STATUS)
+            or self._props.get(PROP_FAN_SPEED, FAN_AUTO)
+        )
         return NOMA_TO_HA_FAN.get(noma_fan, "auto")
 
     @property
     def swing_mode(self) -> str:
         return "on" if str(self._props.get(PROP_SWING, "0")) == "1" else "off"
+
+    def _schedule_confirm_refresh(self) -> None:
+        """Schedule a follow-up poll 10 s after a command.
+
+        Ayla may take a few seconds to relay the command to the device and
+        receive the device's status report back.  The immediate refresh after
+        set_property usually returns the optimistic commanded value; this
+        delayed one captures the confirmed device state.
+        """
+        async def _delayed() -> None:
+            await asyncio.sleep(10)
+            await self.coordinator.async_request_refresh()
+
+        self.hass.async_create_task(_delayed())
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         if hvac_mode == HVACMode.OFF:
@@ -131,6 +158,7 @@ class NomaIQClimate(CoordinatorEntity[NomaIQCoordinator], ClimateEntity):
             await self.coordinator.api.set_property(self.coordinator.dsn, PROP_POWER, "1")
             await self.coordinator.api.set_property(self.coordinator.dsn, PROP_MODE, noma_mode)
         await self.coordinator.async_request_refresh()
+        self._schedule_confirm_refresh()
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         temp = kwargs.get(ATTR_TEMPERATURE)
@@ -139,16 +167,19 @@ class NomaIQClimate(CoordinatorEntity[NomaIQCoordinator], ClimateEntity):
                 self.coordinator.dsn, PROP_TARGET_TEMP, int(temp)
             )
             await self.coordinator.async_request_refresh()
+            self._schedule_confirm_refresh()
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         noma_fan = HA_TO_NOMA_FAN.get(fan_mode, FAN_AUTO)
         await self.coordinator.api.set_property(self.coordinator.dsn, PROP_FAN_SPEED, noma_fan)
         await self.coordinator.async_request_refresh()
+        self._schedule_confirm_refresh()
 
     async def async_set_swing_mode(self, swing_mode: str) -> None:
         value = "1" if swing_mode == "on" else "0"
         await self.coordinator.api.set_property(self.coordinator.dsn, PROP_SWING, value)
         await self.coordinator.async_request_refresh()
+        self._schedule_confirm_refresh()
 
     async def async_turn_on(self) -> None:
         await self.async_set_hvac_mode(HVACMode.COOL)
