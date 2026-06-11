@@ -2,6 +2,8 @@
 
 Unofficial Home Assistant integration for the **Noma iQ** air conditioner (Canadian Tire), using the Ayla Networks cloud API.
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=lyntoo&repository=ha-noma-iq&category=integration)
+
 > **Tested on:** Noma iQ portable and window AC units (`port-ac`, `win-ac`)
 
 ## Features
@@ -35,9 +37,11 @@ Alternatively, use **jadx-gui** (graphical Java decompiler): open the APK, searc
 
 ### HACS (recommended)
 
-1. In HACS, add this repository as a custom repository (Integration)
-2. Install **Noma iQ**
-3. Restart Home Assistant
+Click the badge below to add the repository directly to HACS:
+
+[![Open your Home Assistant instance and add the Noma iQ custom repository.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/custom_repository/?repository=https%3A%2F%2Fgithub.com%2Flyntoo%2Fha-noma-iq&category=integration)
+
+Or manually: in HACS, add this repository as a custom repository (Integration), install **Noma iQ**, then restart Home Assistant.
 
 ### Manual
 
