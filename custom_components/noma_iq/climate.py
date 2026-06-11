@@ -102,15 +102,14 @@ class NomaIQClimate(CoordinatorEntity[NomaIQCoordinator], ClimateEntity):
 
     @property
     def hvac_mode(self) -> HVACMode:
-        # PROP_MODE_STATUS is device-reported actual state.
-        # PROP_POWER/PROP_MODE are last commanded values — stale if command failed.
-        mode_status = self._props.get(PROP_MODE_STATUS)
-        if mode_status in NOMA_TO_HA_MODE:
-            # Device reports an active mode → it is running regardless of commanded power.
-            return NOMA_TO_HA_MODE[mode_status]
-        # mode_status absent or unknown → fall back to commanded power state.
+        # PROP_POWER always determines on/off — mode_status reflects the last
+        # active mode and never reports an "off" state.
         if str(self._props.get(PROP_POWER, "0")) == "0":
             return HVACMode.OFF
+        # Unit is on: prefer device-reported mode_status over commanded mode.
+        mode_status = self._props.get(PROP_MODE_STATUS)
+        if mode_status in NOMA_TO_HA_MODE:
+            return NOMA_TO_HA_MODE[mode_status]
         return NOMA_TO_HA_MODE.get(self._props.get(PROP_MODE, MODE_COOL), HVACMode.COOL)
 
     @property
