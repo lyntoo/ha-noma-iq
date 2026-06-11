@@ -96,10 +96,20 @@ class NomaIQApi:
                     await self.authenticate()
                     async with self._session.post(url, headers=self._headers, json=payload) as resp2:
                         resp2.raise_for_status()
+                        _LOGGER.debug("set_property → %s %s", resp2.status, url)
                         return
                 resp.raise_for_status()
+                _LOGGER.debug("set_property → %s %s", resp.status, url)
         except ClientError as err:
             raise NomaCantConnect from err
+
+    async def get_device_connected(self, dsn: str) -> bool:
+        """Return True if the device is connected to the Ayla cloud."""
+        try:
+            data = await self._get(f"{AYLA_ADS_URL}/apiv1/dsns/{dsn}.json")
+            return data.get("device", {}).get("connection_status") == "Online"
+        except NomaCantConnect:
+            return False
 
     async def get_ac_devices(self) -> list[dict[str, Any]]:
         """Return list of AC devices from Ayla."""
